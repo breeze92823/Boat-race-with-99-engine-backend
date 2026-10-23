@@ -55,6 +55,13 @@ export const SPIN_WEDGES = [
   { id: "hugePet", weight: 0.1 },
 ] as const;
 
+// Leaderboards (leaderboard.ts; client plaza.js boards): the saved doc fields ranked (Rebirth,
+// Wins, Power, Playtime), rows per board and how often the lists are re-read and re-sent.
+export const LEADERBOARD_STATS = ["rebirths", "trophies", "energy", "playtime"] as const;
+export type LeaderboardStat = (typeof LEADERBOARD_STATS)[number];
+export const LEADERBOARD_SIZE = 10;
+export const LEADERBOARD_EVERY_MS = 60 * 1000;
+
 // Ids from the client's catalogs (boats, engines incl. `ladder-N`, partners, trails, pet kinds,
 // potions): camelCase slugs, so nothing odd is stored.
 export const ID_PATTERN = /^[A-Za-z0-9_-]{1,32}$/;

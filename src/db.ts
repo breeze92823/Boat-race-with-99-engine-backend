@@ -1,5 +1,7 @@
 import { MongoClient, type Collection } from "mongodb";
 
+import { LEADERBOARD_STATS } from "./constants.js";
+
 // Bloxity Legion hosting injects MONGODB_URI per game+channel -- an isolated database with
 // scoped credentials. A local `npm start` normally has no Mongo reachable, so a missing or
 // unreachable URI must degrade to "no persistence" rather than crash the room.
@@ -66,6 +68,10 @@ export async function connectDb(): Promise<void> {
     // No dbName passed to .db() -- the injected URI already points at this game+channel's database.
     players = client.db().collection<PlayerDoc>("players");
     console.log("[db] connected to MongoDB");
+    // The leaderboards sort and count by these (leaderboard.ts).
+    for (const stat of LEADERBOARD_STATS) {
+      players.createIndex({ [stat]: -1 }).catch((err) => console.warn(`[db] index on ${stat} failed`, err));
+    }
   } catch (err) {
     console.warn("[db] connect failed -- player progress will not persist:", err);
     client = null;
