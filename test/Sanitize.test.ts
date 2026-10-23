@@ -39,6 +39,9 @@ describe("sanitizeProgress", () => {
       ],
     })!;
     assert.deepStrictEqual(sanitizeProgress({ eggsSeen: ["dog", "dog", "Bad Id!", "dragon"] })!.eggsSeen, ["dog", "dragon"]);
+    const worlds = sanitizeProgress({ world: "city", worldsUnlocked: ["city", "city", "Bad Id!"] })!;
+    assert.deepStrictEqual([worlds.world, worlds.worldsUnlocked], ["city", ["city"]]);
+    assert.strictEqual(sanitizeProgress({ world: "Bad World!" })!.world, undefined);
     assert.deepStrictEqual(out.pets, [
       { kind: "dog", tier: 0, equipped: true, locked: false },
       { kind: "fox", tier: 2, equipped: true, locked: true },

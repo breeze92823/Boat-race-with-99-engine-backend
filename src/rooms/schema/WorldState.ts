@@ -20,6 +20,7 @@ export const PlayerState = schema(
     trail: t.string().default(""),
     partner: t.string().default(""),
     pets: t.string().default(""), // equipped pets "kind:tier,kind:tier"
+    world: t.string().default(""), // the world the player is in (client WORLDS id), "" = the start world
     avatar: t.string().default(""), // Bloxity look JSON { equipped, proportions, skin }, "" = default
   },
   "PlayerState",
