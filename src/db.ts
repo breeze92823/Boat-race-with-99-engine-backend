@@ -30,6 +30,8 @@ export interface PlayerDoc {
   petSlots?: number; // pets equipped at once
   petStorage?: number; // pets owned at most
   eggsSeen?: string[]; // pet kinds ever hatched (client eggs.js: the NEW! tag)
+  world?: string; // the world the player was in (client worlds.js WORLDS), "" = the start world
+  worldsUnlocked?: string[]; // worlds whose portal requirement was met once (they stay open)
   giftTime?: number; // Online Gifts clock, s online this round
   giftsClaimed?: number[]; // GIFTS.list indexes claimed this round
   potions?: Record<string, number>; // potion id -> count (gifts.js)
