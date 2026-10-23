@@ -5,6 +5,12 @@ export const ROOM_MAX_CLIENTS = 50;
 export const NAME_MAX = 64;
 // Profile picture URL (Bloxity `pfp`), relayed so other players can draw it.
 export const PFP_MAX_LEN = 512;
+// Presence (presence.ts): the Bloxity avatar JSON relayed for the others to draw, the most pets
+// drawn per player, and the pose bounds (|x|, |y| and z up to `xy` m; z down to -`z` m: a race's
+// track runs far down -Z; speed in m/s).
+export const AVATAR_MAX_LEN = 3000;
+export const PRESENCE_PETS_MAX = 8;
+export const POSE_BOUNDS = { xy: 5000, z: 1e8, speed: 2000 };
 
 // Colyseus drops the whole connection for a WebSocket message above this (default 4 KB).
 export const MAX_PAYLOAD_BYTES = 128 * 1024;

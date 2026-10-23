@@ -5,6 +5,7 @@ import { getPlayers, type PlayerDoc } from "../db.js";
 import { sanitizeProgress } from "../sanitize.js";
 import { accrue, rollWedge, spinStateFrom, type SpinState } from "../spin.js";
 import { claimDaily, dailyFields, dailyView, readDaily, rollDaily, type DailyState } from "../daily.js";
+import { applyAvatar, applyLoadout, applyPose } from "../presence.js";
 
 function sanitizeName(raw: unknown): string {
   return typeof raw === "string" ? raw.slice(0, NAME_MAX) : "";
@@ -113,6 +114,20 @@ export class WorldRoom extends Room<{ state: WorldState }> {
       const d = msg?.distance;
       p.distance = p.racing && typeof d === "number" && Number.isFinite(d) ? Math.min(DISTANCE_MAX, Math.max(0, d)) : 0;
     },
+    // Presence (presence.ts): the sender's pose ~10x/s, its equipped gear and its Bloxity look,
+    // relayed through the roster so everyone draws them in the world (client remotePlayers.js).
+    pose: (client: Client, msg: unknown) => {
+      const p = this.state.players.get(client.sessionId);
+      if (p) applyPose(p, msg);
+    },
+    loadout: (client: Client, msg: unknown) => {
+      const p = this.state.players.get(client.sessionId);
+      if (p) applyLoadout(p, msg);
+    },
+    setAvatar: (client: Client, msg: unknown) => {
+      const p = this.state.players.get(client.sessionId);
+      if (p) applyAvatar(p, msg);
+    },
     // Re-states identity after a login/logout that happens AFTER join (a guest who signs in
     // mid-session). The server answers with progress/noProgress for the new identity.
     identify: (client: Client, msg: { username?: string; userId?: string; pfp?: string }) => {
@@ -124,10 +139,14 @@ export class WorldRoom extends Room<{ state: WorldState }> {
     },
   };
 
-  onJoin(client: Client, options?: { username?: string; userId?: string; pfp?: string }) {
+  onJoin(client: Client, options?: { username?: string; userId?: string; pfp?: string; pose?: unknown; loadout?: unknown; avatar?: string }) {
     const p = new PlayerState();
     p.username = sanitizeName(options?.username);
     p.pfp = sanitizePfp(options?.pfp);
+    // Presence from the join options, so the others draw the newcomer right away.
+    applyPose(p, options?.pose);
+    applyLoadout(p, options?.loadout);
+    applyAvatar(p, options);
     this.state.players.set(client.sessionId, p);
     this.setUserId(client, p, typeof options?.userId === "string" ? options.userId : "");
   }
