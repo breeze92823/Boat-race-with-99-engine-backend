@@ -1,11 +1,12 @@
 import { Room, Client, CloseCode } from "colyseus";
 import { WorldState, PlayerState } from "./schema/WorldState.js";
-import { DISTANCE_MAX, GUEST_ID_PREFIX, NAME_MAX, PFP_MAX_LEN, RECONNECT_SECONDS, ROOM_MAX_CLIENTS } from "../constants.js";
+import { DISTANCE_MAX, GUEST_ID_PREFIX, LEADERBOARD_EVERY_MS, NAME_MAX, PFP_MAX_LEN, RECONNECT_SECONDS, ROOM_MAX_CLIENTS } from "../constants.js";
 import { getPlayers, type PlayerDoc } from "../db.js";
 import { sanitizeProgress } from "../sanitize.js";
 import { accrue, rollWedge, spinStateFrom, type SpinState } from "../spin.js";
 import { claimDaily, dailyFields, dailyView, readDaily, rollDaily, type DailyState } from "../daily.js";
 import { applyAvatar, applyLoadout, applyPose } from "../presence.js";
+import { ranksOf, topBoards } from "../leaderboard.js";
 
 function sanitizeName(raw: unknown): string {
   return typeof raw === "string" ? raw.slice(0, NAME_MAX) : "";
@@ -138,6 +139,26 @@ export class WorldRoom extends Room<{ state: WorldState }> {
       if (typeof msg?.userId === "string") this.setUserId(client, p, msg.userId);
     },
   };
+
+  // Leaderboards (leaderboard.ts): everyone gets the top lists + their own ranks every
+  // LEADERBOARD_EVERY_MS, and once right after their save loads.
+  onCreate() {
+    this.clock.setInterval(() => {
+      for (const c of this.clients) void this.sendLeaderboard(c);
+    }, LEADERBOARD_EVERY_MS);
+  }
+
+  // `leaderboard` { boards: { rebirths|trophies|energy|playtime: [{ name, value }] }, ranks: { stat: n | null } }.
+  private async sendLeaderboard(client: Client) {
+    const userId = this.userIds.get(client.sessionId) ?? "";
+    const [boards, ranks] = await Promise.all([topBoards(), ranksOf(userId)]);
+    if (!this.state.players.has(client.sessionId)) return;
+    try {
+      client.send("leaderboard", { boards, ranks });
+    } catch {
+      // Gone meanwhile.
+    }
+  }
 
   onJoin(client: Client, options?: { username?: string; userId?: string; pfp?: string; pose?: unknown; loadout?: unknown; avatar?: string }) {
     const p = new PlayerState();
@@ -300,5 +321,6 @@ export class WorldRoom extends Room<{ state: WorldState }> {
     this.dailies.set(client.sessionId, daily);
     if (rollDaily(daily)) await this.saveDaily(client.sessionId, daily);
     if (this.dailies.get(client.sessionId) === daily) client.send("daily", dailyView(daily));
+    void this.sendLeaderboard(client);
   }
 }
